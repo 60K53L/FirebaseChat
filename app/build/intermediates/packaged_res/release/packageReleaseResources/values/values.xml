@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FirebaseChat</string>
+    <string name="firebase_database_url" translatable="false">https://fir-chat-bae07-default-rtdb.europe-west1.firebasedatabase.app</string>
+    <string name="gcm_defaultSenderId" translatable="false">570225274145</string>
+    <string name="google_api_key" translatable="false">AIzaSyBtF4QgJ6MeinSsWVKPUgqnjgtxjGfNEn0</string>
+    <string name="google_app_id" translatable="false">1:570225274145:android:d06857ada385b69af5a260</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyBtF4QgJ6MeinSsWVKPUgqnjgtxjGfNEn0</string>
+    <string name="google_storage_bucket" translatable="false">fir-chat-bae07.firebasestorage.app</string>
+    <string name="project_id" translatable="false">fir-chat-bae07</string>
+    <style name="Theme.FirebaseChat" parent="android:Theme.Material.Light.NoActionBar"/>
+</resources>

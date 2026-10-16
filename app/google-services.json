@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "570225274145",
+    "firebase_url": "https://fir-chat-bae07-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "fir-chat-bae07",
+    "storage_bucket": "fir-chat-bae07.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:570225274145:android:d06857ada385b69af5a260",
+        "android_client_info": {
+          "package_name": "com.example.firebasechat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtF4QgJ6MeinSsWVKPUgqnjgtxjGfNEn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

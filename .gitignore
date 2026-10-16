@@ -1,0 +1,21 @@
+# Android
+*.iml
+.gradle
+local.properties
+.idea
+build/
+*/build/
+*.apk
+*.ap_
+*.aab
+*.jks
+*.keystore
+google-services.json
+
+# Functions deps
+functions/node_modules/
+functions/.firebase/
+
+# OS
+.DS_Store
+Thumbs.db
