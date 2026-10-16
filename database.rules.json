@@ -1,9 +1,14 @@
 {
   "rules": {
+    "appUpdate": {
+      ".read": true,
+      ".write": false
+    },
     "messages": {
       ".read": true,
+      ".write": "auth != null",
       "$msg": {
-        ".write": "auth != null && !data.exists()",
+        ".write": "auth != null",
         ".validate": "newData.hasChildren(['uid','name','text','ts']) && newData.child('uid').val() == auth.uid && newData.child('name').isString() && newData.child('text').isString() && newData.child('text').val().length <= 500 && (!newData.hasChild('imageBase64') || newData.child('imageBase64').isString())"
       }
     },

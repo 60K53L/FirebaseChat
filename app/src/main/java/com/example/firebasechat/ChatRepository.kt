@@ -66,6 +66,16 @@ class ChatRepository {
         return listener
     }
 
+    fun deleteMessage(key: String) {
+        if (key.isNotBlank()) {
+            messagesRef.child(key).removeValue()
+        }
+    }
+
+    fun deleteAllMessages() {
+        messagesRef.removeValue()
+    }
+
     fun removeListener(listener: ValueEventListener) {
         messagesRef.removeEventListener(listener)
     }

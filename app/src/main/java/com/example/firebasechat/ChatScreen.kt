@@ -79,7 +79,9 @@ fun ChatApp() {
     val prefs = remember { context.getSharedPreferences("chat_prefs", Context.MODE_PRIVATE) }
 
     var nickname by remember { mutableStateOf(prefs.getString("nickname", "") ?: "") }
+    var isAdmin by remember { mutableStateOf(prefs.getBoolean("isAdmin", false)) }
     var showNameDialog by remember { mutableStateOf(nickname.isBlank()) }
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
@@ -136,6 +138,7 @@ fun ChatApp() {
 
     if (showNameDialog) {
         var input by remember { mutableStateOf(nickname) }
+        var adminInput by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { },
             title = { Text("Takma ad seç") },
@@ -149,13 +152,25 @@ fun ChatApp() {
                         singleLine = true,
                         label = { Text("Takma ad") }
                     )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = adminInput,
+                        onValueChange = { adminInput = it },
+                        singleLine = true,
+                        label = { Text("Admin şifresi (isteğe bağlı)") }
+                    )
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     val chosen = input.trim().ifBlank { "Anonim" }
                     nickname = chosen
-                    prefs.edit().putString("nickname", chosen).apply()
+                    val admin = adminInput.trim() == "100687"
+                    isAdmin = admin
+                    prefs.edit()
+                        .putString("nickname", chosen)
+                        .putBoolean("isAdmin", admin)
+                        .apply()
                     showNameDialog = false
                 }) { Text("Kaydet") }
             }
@@ -194,8 +209,39 @@ fun ChatApp() {
         )
     }
 
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text("Tüm mesajları sil?") },
+            text = { Text("Tüm mesajlar kalıcı olarak silinecek. Emin misin?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteAllMessages()
+                    showDeleteAllDialog = false
+                }) { Text("Sil", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) { Text("İptal") }
+            }
+        )
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Açık Oda") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Açık Oda") },
+                actions = {
+                    if (isAdmin) {
+                        TextButton(onClick = { showDeleteAllDialog = true }) {
+                            Text("Tümünü Sil", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    TextButton(onClick = { showNameDialog = true }) {
+                        Text("Profil")
+                    }
+                }
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -228,7 +274,9 @@ fun ChatApp() {
                 items(viewModel.messages, key = { it.key }) { msg ->
                     MessageBubble(
                         message = msg,
-                        isMine = msg.uid == viewModel.uid.value
+                        isMine = msg.uid == viewModel.uid.value,
+                        isAdmin = isAdmin,
+                        onDelete = { viewModel.deleteMessage(msg.key) }
                     )
                     Spacer(Modifier.height(6.dp))
                 }
@@ -285,7 +333,7 @@ fun ChatApp() {
 }
 
 @Composable
-private fun MessageBubble(message: ChatMessage, isMine: Boolean) {
+private fun MessageBubble(message: ChatMessage, isMine: Boolean, isAdmin: Boolean = false, onDelete: () -> Unit = {}) {
     val alignment = if (isMine) Arrangement.End else Arrangement.Start
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -332,11 +380,21 @@ private fun MessageBubble(message: ChatMessage, isMine: Boolean) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                Text(
-                    text = formatTime(message.ts),
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.align(Alignment.End)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isAdmin && message.key.isNotBlank()) {
+                        TextButton(onClick = onDelete) {
+                            Text("Sil", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    Text(
+                        text = formatTime(message.ts),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }
@@ -353,6 +411,11 @@ private suspend fun downloadAndInstall(
                 !context.packageManager.canRequestPackageInstalls()
             ) {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Kurulum izni gerekli. Açılan ekrandan izin verip uygulamaya dönün.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
                     val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
                         .setData(Uri.parse("package:${context.packageName}"))
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -381,13 +444,26 @@ private suspend fun downloadAndInstall(
                         cursor.close()
                         val uri = dm.getUriForDownloadedFile(downloadId)
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                context,
+                                "Güncelleme indirildi, kurulum başlatılıyor.",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
                             openInstaller(context, uri)
                         }
                         onComplete(true)
                         return@withContext
                     }
                     if (status == DownloadManager.STATUS_FAILED) {
+                        val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
                         cursor.close()
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                context,
+                                "İndirme başarısız (kod $reason).",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
                         onComplete(false)
                         return@withContext
                     }
@@ -395,7 +471,14 @@ private suspend fun downloadAndInstall(
                 cursor.close()
                 kotlinx.coroutines.delay(1000)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Hata: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
             onComplete(false)
         }
     }

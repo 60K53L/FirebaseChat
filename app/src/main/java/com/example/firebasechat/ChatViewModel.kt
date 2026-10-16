@@ -69,6 +69,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteAllMessages() {
+        repository.deleteAllMessages()
+    }
+
+    fun deleteMessage(key: String) {
+        repository.deleteMessage(key)
+    }
+
     fun send(name: String, text: String) {
         val currentUid = uid.value ?: return
         if (text.isBlank()) return
@@ -102,8 +110,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
-        manager.notify(System.currentTimeMillis().toInt(), notification)
+        NotificationManagerCompat.from(app).notify(System.currentTimeMillis().toInt(), notification)
     }
 
     override fun onCleared() {
